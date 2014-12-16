@@ -78,8 +78,22 @@ def main():
         if (b.find("{%s}lod1MultiSurface" % ns['cgmlb']) is not None or 
             b.find("{%s}lod2MultiSurface" % ns['cgmlb']) is not None or 
             b.find("{%s}lod3MultiSurface" % ns['cgmlb']) is not None):
-            print "---multisurfaces---"
-            # TODO : implement this.
+            # find the lod of the building
+            lod = 0
+            for i in range(1,4):
+                if len(b.find(".//{%s}lod%dMultiSurface" % (ns['cgmlb'], i))) != 0:
+                    lod = i
+                    break
+            # replace the MultiSurfaces by a Solid
+            sms = b.findall(".//{%s}surfaceMember" % ns['gml'])
+            b.remove(b.find("{%s}lod%dMultiSurface" % (ns['cgmlb'], lod)))
+            bsolid = etree.Element("{%s}lod%dSolid" % (ns['cgmlb'], lod))
+            s = etree.SubElement(bsolid, "{%s}Solid" % ns['gml'])
+            e = etree.SubElement(s, "{%s}exterior" % ns['gml'])
+            cs = etree.SubElement(e, "{%s}CompositeSurface" % ns['gml'])
+            for sm in sms:
+                cs.append(sm)
+            b.insert(0, bsolid)
         
         # if semantic surfaces are used
         if (b.findall("{%s}boundedBy" % ns['cgmlb'])):
@@ -97,7 +111,7 @@ def main():
                         break
                 for i in semsurface.findall(".//{%s}Polygon" % ns['gml']):
                     semsurfaces.append(i)
-            bsolid = etree.Element("{%s}lod2Solid" % ns['cgmlb'])
+            bsolid = etree.Element("{%s}lod%dSolid" % (ns['cgmlb'], lod))
             s = etree.SubElement(bsolid, "{%s}Solid" % ns['gml'])
             e = etree.SubElement(s, "{%s}exterior" % ns['gml'])
             cs = etree.SubElement(e, "{%s}CompositeSurface" % ns['gml'])
